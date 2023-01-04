@@ -11,7 +11,6 @@ type Tokens struct { //infos on the current code
 	position    int
 	sourceCode  string
 	currentLine []rune
-	blockLevel  int
 	errorCount  int
 	lastString  string
 	lastToken   Token
@@ -108,11 +107,9 @@ func (t Tokens) getToken() Token {
 		t.lastToken = CLOSE
 	case '{':
 		t.position++
-		t.blockLevel++
 		t.lastToken = BLOCKSTART
 	case '}':
 		t.position++
-		t.blockLevel--
 		t.lastToken = BLOCKSTOP
 	case '-':
 		t.position++
