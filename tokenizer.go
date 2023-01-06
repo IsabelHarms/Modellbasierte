@@ -72,11 +72,12 @@ func (t Tokens) getToken() Token {
 		if t.followingRune('=') {
 			t.position += 2
 			t.lastToken = DECLARE
+		} else {
+			t.position++
+			t.error("invalid operand")
+			skipInvalid()
+			t.lastToken = INVALID
 		}
-		t.position++
-		t.error("invalid operand")
-		skipInvalid()
-		t.lastToken = INVALID
 	case '+':
 		t.position++
 		t.lastToken = PLUS
@@ -96,9 +97,10 @@ func (t Tokens) getToken() Token {
 		if t.followingRune('=') {
 			t.position += 2
 			t.lastToken = EQUAL
+		} else {
+			t.position++
+			t.lastToken = ASSIGN
 		}
-		t.position++
-		t.lastToken = ASSIGN
 	case '(':
 		t.position++
 		t.lastToken = OPEN
