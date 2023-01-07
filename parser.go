@@ -1,18 +1,23 @@
 package main
 
+import (
+	"fmt"
+)
+
 var tokens Tokens
 var vartable *VarTable
 var invalidExp Exp
 
 func parse() {
 
-	tokens = Tokens{position: 0, sourceCode: "A+B*C", currentLine: []rune(""), errorCount: 0, again: false}
+	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
+	tokens.setSourceCode("print(3+4*5)")
 
 	vartable = &VarTable{nesting: -1} // ready for first start of block
-	invalidExp = (Var)
+	//invalidExp = (Var)
 	// work with a pointer, otherwise you will get multiple structs!
 
-	vartable.blockStart() // dereferencing is implied! :-(
+	/*vartable.blockStart() // dereferencing is implied! :-(
 
 	vartable.declareInt("Isabel", 22)
 	vartable.declareInt("David", 25)
@@ -22,78 +27,84 @@ func parse() {
 	vartable.blockEnd()
 	vartable.Get("Isabel").printValue()
 	vartable.blockStart()
-	vartable.Get("Isabel").printValue()
+	vartable.Get("Isabel").printValue()*/
 }
 
-/*type IMPtype byte
-
-const (
-	BOOLEAN   IMPtype = 0
-	INTEGER   IMPtype = 1
-	UNDEFINED IMPtype = 2 // when parsing illegal expressions
-)
-
-type Variable struct {
-	varType IMPtype
-	iValue  int
-	bValue  bool
+type Exp interface {
+	//pretty() string
+	//eval() Value
+	GetType() IMPtype
 }
 
-func (v *Variable) printValue() {
+// a value is an Expression, it must have:
+func (v Value) GetType() IMPtype {
+	return v.Type
+}
+
+type ExpNode struct {
+	op    Token
+	Type  IMPtype
+	left  Exp
+	right Exp // unused for Not-operator
+}
+
+// a ExpNode is an Expression, it must have:
+func (r ExpNode) GetType() IMPtype {
+	return r.Type
+}
+
+// Typabgleich
+func SetType(r *ExpNode) {
+
+	r.Type = Undefined // unless wie find a legal combination
+	if r.left.GetType() == Undefined || r.op != NOT && r.right.GetType() == Undefined {
+		return // no additional Error
+	}
 	switch {
-	case v == nil:
-		fmt.Println("undeclared Variable")
-	case v.varType == BOOLEAN:
-		fmt.Println(v.bValue)
-	case v.varType == INTEGER:
-		fmt.Println(v.iValue)
-	default:
-		fmt.Println("undefined Type")
+	case r.op == PLUS || r.op == MULT: // arithmetic
+		if r.left.GetType() == Integer && r.right.GetType() == Integer {
+			r.Type = Integer
+		}
+	case r.op == AND || r.op == OR: // boolean binary
+		if r.left.GetType() == Boolean && r.right.GetType() == Boolean {
+			r.Type = Boolean
+		}
+	case r.op == NOT: // boolean unary
+		if r.left.GetType() == Boolean {
+			r.Type = Boolean
+		}
+	case r.op == EQUAL:
+		if r.left.GetType() == r.right.GetType() {
+			r.Type = Boolean
+		} else {
+			tokens.warning("Operands of '==' must have same type")
+		}
+	case r.op == LESS:
+		if r.left.GetType() == Integer && r.right.GetType() == Integer {
+			r.Type = Boolean
+		}
+	}
+	if r.Type == Undefined {
+		tokens.error(" boolean / arithmetic type mismatch")
 	}
 }
 
-const MaxNesting = 50
+func main() {
+	r := ExpNode{op: PLUS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
+	SetType(&r)
+	fmt.Println(r.GetType())
 
-type VarTable struct {
-	nesting int
-	names   [MaxNesting]map[string]*Variable // array of maps, each is still = nil
-}*/
+	r = ExpNode{op: LESS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
+	SetType(&r)
+	fmt.Println(r.GetType())
 
-func (vt *VarTable) blockStart() {
-	vt.nesting++
-
-	if vt.nesting == MaxNesting {
-	} // toDo: runtime error
-}
-
-func (vt *VarTable) blockEnd() {
-	if vt.nesting < 0 {
-	} // toDo: runtime error
-	vt.names[vt.nesting] = nil // clear all declarations
-	vt.nesting--
-}
-
-func (vt *VarTable) declareInt(name string, i int) {
-	if vt.names[vt.nesting] == nil {
-		vt.names[vt.nesting] = map[string]*Val{}
-	} // new map for current block
-	vt.names[vt.nesting][name] = &Val{flag: ValueInt, valI: i}
-}
-
-func (vt *VarTable) Get(name string) *Val {
-	for i := vt.nesting; i >= 0; i-- {
-		if vt.names[vt.nesting] == nil {
-			continue
-		}
-		v := vt.names[vt.nesting][name]
-		if v != nil {
-			return v
-		}
-	}
-	return nil
+	r = ExpNode{op: EQUAL, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Boolean, bValue: false}}
+	SetType(&r)
+	fmt.Println(r.GetType())
 }
 
 /*
+Grammatik
 Operand := Variable | Literal | "!" Operand |"(" Expression ")"
 PlusOp := Operand | Operand "*" PlusOp
 LessOp := PlusOp | PlusOp "+" LessOp
@@ -106,20 +117,21 @@ Expression := OrOp | OrOp "| |" Expression
 func operand() Exp {
 	switch tokens.getToken() {
 	case NAME:
-		varPtr := vartable.Get(tokens.lastString)
-		if varPtr == nil {
+		valPtr := vartable.Get(tokens.lastString)
+		if valPtr == nil {
 			tokens.error("undefined variable")
-			//return
+			return &Value{Type: Undefined}
 		}
-		//return (Exp)(*varPtr)
+		return valPtr
 
 	case BOOLLITERAL:
-		return Bool(tokens.lastString == "true")
+		return &Value{Type: Boolean, bValue: tokens.lastString == "true"}
 	case INTLITERAL:
 		//todo return Num()
 	case NOT:
-		//op := operand()
-		//if op.infer() typ checken und negieren
+		node := ExpNode{op: NOT, left: operand()}
+		SetType(&node)
+		return &node
 	case OPEN:
 		exp := expression()
 		if tokens.getToken() != CLOSE {
@@ -128,12 +140,17 @@ func operand() Exp {
 		}
 		return exp
 	}
+	tokens.error("missing operand")
+	tokens.unGetToken()
+	return &Value{Type: Undefined}
 }
 
 func plusOp() Exp {
 	lhs := operand()
 	if tokens.getToken() == MULT {
-		return (Mult)([2]Exp{lhs, plusOp()})
+		node := ExpNode{op: MULT, left: lhs, right: plusOp()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs
@@ -142,7 +159,9 @@ func plusOp() Exp {
 func lessOp() Exp {
 	lhs := plusOp()
 	if tokens.getToken() == PLUS {
-		return (Plus)([2]Exp{lhs, lessOp()})
+		node := ExpNode{op: PLUS, left: lhs, right: lessOp()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs
@@ -151,7 +170,9 @@ func lessOp() Exp {
 func equalOp() Exp {
 	lhs := lessOp()
 	if tokens.getToken() == LESS {
-		return (Less)([2]Exp{lhs, lessOp()})
+		node := ExpNode{op: LESS, left: lhs, right: lessOp()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs
@@ -160,7 +181,9 @@ func equalOp() Exp {
 func andOp() Exp {
 	lhs := equalOp()
 	if tokens.getToken() == EQUAL {
-		return (Equal)([2]Exp{lhs, equalOp()})
+		node := ExpNode{op: EQUAL, left: lhs, right: equalOp()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs
@@ -169,7 +192,9 @@ func andOp() Exp {
 func orOp() Exp {
 	lhs := andOp()
 	if tokens.getToken() == PLUS {
-		return (And)([2]Exp{lhs, orOp()})
+		node := ExpNode{op: AND, left: lhs, right: orOp()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs
@@ -178,7 +203,9 @@ func orOp() Exp {
 func expression() Exp {
 	lhs := orOp()
 	if tokens.getToken() == OR {
-		return (Or)([2]Exp{lhs, expression()})
+		node := ExpNode{op: OR, left: lhs, right: expression()}
+		SetType(&node)
+		return &node
 	}
 	tokens.unGetToken()
 	return lhs

@@ -1,13 +1,13 @@
 package main
 
-import (
+/*import (
 	"fmt"
 	"strconv"
 )
 
 // Simple imperative language
 
-/*
+
 vars       Variable names, start with lower-case letter
 
 prog      ::= block
@@ -34,7 +34,7 @@ exp ::= 0 | 1 | -1 | ...     -- Integers
 
 // Values
 
-type Kind int
+/*type Kind int
 
 const (
 	ValueInt  Kind = 0
@@ -451,7 +451,7 @@ func ex2() {
 		boolean(false),
 		number(0)
 	)
-	
+
 	run(ast)
 }
 
@@ -461,7 +461,7 @@ func ex3() {
 		boolean(false),
 		number(0)
 	)
-	
+
 	run(ast)
 }
 
@@ -472,4 +472,4 @@ func main() {
 	ex1()
 	ex2()
 	ex3()
-}
+}*/

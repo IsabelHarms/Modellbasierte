@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 )
 
@@ -9,7 +10,7 @@ type Token int
 
 type Tokens struct { //infos on the current code
 	position    int
-	sourceCode  string
+	sourceCode  []rune
 	currentLine []rune
 	errorCount  int
 	lastString  string
@@ -44,7 +45,7 @@ const (
 )
 
 func (t Tokens) setSourceCode(source string) {
-	t.sourceCode = source
+	t.sourceCode = []rune(source)
 }
 
 func (t Tokens) unGetToken() {
@@ -58,8 +59,12 @@ func (t Tokens) getToken() Token {
 		return t.lastToken
 	}
 
+	for t.position < len(t.currentLine) && (t.currentLine[t.position] == ' ' || t.currentLine[t.position] == '\t') {
+		t.position++
+	}
+
 	if t.position == len(t.currentLine) { //get next line
-		t.currentLine = nextLine()
+		t.currentLine = t.nextLine()
 		t.position = 0
 	}
 	if len(t.currentLine) == 0 { //end of code
@@ -166,8 +171,12 @@ func (t Tokens) getTokenNumber() {
 	t.lastToken = INTLITERAL
 }
 
-func nextLine() []rune {
-	return []rune("ABC€")
+func (t Tokens) nextLine() []rune {
+	var pos = strings.IndexRune(string(t.sourceCode), '\n')
+
+	nextLine := t.sourceCode[0:pos]     // ein slice
+	t.sourceCode = t.sourceCode[pos+1:] // der Rest
+	return nextLine
 }
 
 func (t Tokens) followingRune(r rune) bool {
@@ -180,5 +189,9 @@ func skipInvalid() {
 
 func (t Tokens) error(s string) {
 	t.errorCount++
+	fmt.Println(s)
+}
+
+func (t Tokens) warning(s string) {
 	fmt.Println(s)
 }
