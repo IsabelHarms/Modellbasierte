@@ -40,20 +40,20 @@ const (
 	NOT         Token = 17
 	LESS        Token = 18
 	EQUAL       Token = 19
-	SEPERATOR   Token = 20
+	SEPARATOR   Token = 20
 	NAME        Token = 21
 	END         Token = 22
 )
 
-func (t Tokens) setSourceCode(source string) {
+func (t *Tokens) setSourceCode(source string) {
 	t.lines = strings.Split(source, "\n")
 }
 
-func (t Tokens) unGetToken() {
+func (t *Tokens) unGetToken() {
 	t.again = true
 }
 
-func (t Tokens) getToken() Token {
+func (t *Tokens) getToken() Token {
 
 	if t.again {
 		t.again = false
@@ -72,7 +72,6 @@ func (t Tokens) getToken() Token {
 		t.lastToken = END
 	}
 
-	//todo nicht return DECLARE, sondern lastToken = DECLARE und am ende return lastToken
 	switch t.currentLine[t.position] {
 	case ':':
 		if t.followingRune('=') {
@@ -90,6 +89,20 @@ func (t Tokens) getToken() Token {
 	case '*':
 		t.position++
 		t.lastToken = MULT
+	case '&':
+		if t.followingRune('&') {
+			t.position += 2
+			t.lastToken = AND
+		} else {
+			t.lastToken = INVALID
+		}
+	case '|':
+		if t.followingRune('|') {
+			t.position += 2
+			t.lastToken = OR
+		} else {
+			t.lastToken = INVALID
+		}
 	case '!':
 		t.position++
 		t.lastToken = NOT
@@ -98,7 +111,7 @@ func (t Tokens) getToken() Token {
 		t.lastToken = LESS
 	case ',':
 		t.position++
-		t.lastToken = SEPERATOR
+		t.lastToken = SEPARATOR
 	case '=':
 		if t.followingRune('=') {
 			t.position += 2
@@ -125,80 +138,91 @@ func (t Tokens) getToken() Token {
 			t.getTokenNumber()
 		}
 		t.lastToken = INVALID
-	}
-
-	if unicode.IsLetter(t.currentLine[t.position]) {
-		var stop int
-		for stop := t.position + 1; stop < len(t.currentLine) && (unicode.IsLetter(t.currentLine[stop]) || unicode.IsDigit(t.currentLine[stop])); stop++ {
-
+	default:
+		if isLetter(t.currentLine[t.position]) { //is letter is wrong
+			stop := t.position + 1
+			for stop < len(t.currentLine) && (isLetter(t.currentLine[stop]) || unicode.IsDigit(t.currentLine[stop])) {
+				stop++
+			}
+			word := t.currentLine[t.position:stop]
+			t.position = stop
+			t.lastString = string(word)
+			//toLower?
+			switch t.lastString {
+			case "while":
+				t.lastToken = WHILE
+			case "if":
+				t.lastToken = IF
+			case "else":
+				t.lastToken = ELSE
+			case "true":
+				t.lastToken = BOOLLITERAL
+			case "false":
+				t.lastToken = BOOLLITERAL
+			case "print":
+				t.lastToken = PRINT
+			default:
+				t.lastToken = NAME //if none of the cases are true it has to be a NAME
+			}
 		}
-		word := t.currentLine[t.position:stop]
-		t.lastString = string(word)
-		switch string(t.lastString) {
-		case "WHILE":
-			t.lastToken = WHILE
-		case "IF":
-			t.lastToken = IF
-		case "ELSE":
-			t.lastToken = ELSE
-		case "TRUE":
-			t.lastToken = BOOLLITERAL
-		case "FALSE":
-			t.lastToken = BOOLLITERAL
-		case "AND":
-			t.lastToken = AND
-		case "OR":
-			t.lastToken = OR
-		case "PRINT":
-			t.lastToken = PRINT
-		default:
-			t.lastToken = NAME //if none of the cases are true it has to be a NAME
+
+		if unicode.IsDigit(t.currentLine[t.position]) {
+			t.getTokenNumber()
 		}
 	}
 
-	if unicode.IsDigit(t.currentLine[t.position]) {
-		t.getTokenNumber()
-	}
-	//fmt.Println("%v\n", t.lastToken)
+	//fmt.Printf(t.lastString)
+	fmt.Printf("%v\n", t.lastToken)
 	return t.lastToken
 }
 
-func (t Tokens) getTokenNumber() {
-	stop := t.position + 1
-	for unicode.IsDigit(t.currentLine[stop]) {
+func (t *Tokens) getTokenNumber() {
+	stop := t.position
+	for stop < len(t.currentLine) && unicode.IsDigit(t.currentLine[stop]) {
 		stop++
 	}
 	number := t.currentLine[t.position:stop]
 	t.lastString = string(number)
 	t.lastToken = INTLITERAL
+	t.position = stop
 }
 
-func (t Tokens) nextLine() []rune {
+func (t *Tokens) nextLine() []rune {
 	t.lineNr++
-	//fmt.Println(t.lines[t.lineNr])
-	return []rune(t.lines[t.lineNr])
+	if t.lineNr > len(t.lines) {
+		return []rune(" ")
+	}
+	return []rune(t.lines[t.lineNr-1]) //todo
 }
 
-func (t Tokens) followingRune(r rune) bool {
-	return (t.position+1 < len(t.currentLine) && t.currentLine[t.position+1] == r)
+func (t *Tokens) followingRune(r rune) bool {
+	return t.position+1 < len(t.currentLine) && t.currentLine[t.position+1] == r
 }
 
 func skipInvalid() {
 
 }
 
-func (t Tokens) error(s string) {
+func (t *Tokens) error(s string) {
 	t.errorCount++
 	fmt.Println(s)
 }
 
-func (t Tokens) warning(s string) {
+func (t *Tokens) warning(s string) {
 	fmt.Println(s)
 }
 
-func main() {
+func isLetter(c rune) bool {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+}
+
+func tokenTest() {
 	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
-	tokens.setSourceCode("3+4*5")
+	tokens.setSourceCode("print(true&&false)")
 	tokens.getToken()
-	println(tokens.lastString)
+	tokens.getToken()
+	tokens.getToken()
+	tokens.getToken()
+	tokens.getToken()
+	tokens.getToken()
 }

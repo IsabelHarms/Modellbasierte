@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+)
+
 var tokens Tokens
 var vartable *VarTable
 var invalidExp Exp
@@ -7,9 +12,11 @@ var invalidExp Exp
 func parse() {
 
 	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
-	tokens.setSourceCode("print(3+4*5)")
+	tokens.setSourceCode("print( 3 +4*15)")
 	tokens.getToken()
 	vartable = &VarTable{nesting: -1} // ready for first start of block
+	exp := operand()
+	fmt.Printf("", exp) //debug to here and look at the expression tree
 	//invalidExp = (Var)
 	// work with a pointer, otherwise you will get multiple structs!
 
@@ -43,6 +50,8 @@ type ExpNode struct {
 	left  Exp
 	right Exp // unused for Not-operator
 }
+
+type Block []*ExpNode // slice of struct pointers
 
 // a ExpNode is an Expression, it must have:
 func (r ExpNode) GetType() IMPtype {
@@ -85,7 +94,7 @@ func SetType(r *ExpNode) {
 	}
 }
 
-func fsth() {
+func main() {
 	parse()
 	/*r := ExpNode{op: PLUS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
 	SetType(&r)
@@ -120,11 +129,15 @@ func operand() Exp {
 			return &Value{Type: Undefined}
 		}
 		return valPtr
-
 	case BOOLLITERAL:
 		return &Value{Type: Boolean, bValue: tokens.lastString == "true"}
 	case INTLITERAL:
-		//todo return Num()
+		num, err := strconv.Atoi(tokens.lastString)
+		if err != nil {
+			//something went terribly wrong
+			tokens.error("wtf")
+		}
+		return &Value{Type: Integer, iValue: num}
 	case NOT:
 		node := ExpNode{op: NOT, left: operand()}
 		SetType(&node)
