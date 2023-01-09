@@ -2,7 +2,7 @@ package main
 
 // Types
 
-type IMPtype byte
+type IMPtype int
 
 const (
 	Boolean   IMPtype = 1

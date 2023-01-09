@@ -10,7 +10,8 @@ type Token int
 
 type Tokens struct { //infos on the current code
 	position    int
-	sourceCode  []rune
+	lines       []string
+	lineNr      int
 	currentLine []rune
 	errorCount  int
 	lastString  string
@@ -45,7 +46,7 @@ const (
 )
 
 func (t Tokens) setSourceCode(source string) {
-	t.sourceCode = []rune(source)
+	t.lines = strings.Split(source, "\n")
 }
 
 func (t Tokens) unGetToken() {
@@ -158,6 +159,7 @@ func (t Tokens) getToken() Token {
 	if unicode.IsDigit(t.currentLine[t.position]) {
 		t.getTokenNumber()
 	}
+	//fmt.Println("%v\n", t.lastToken)
 	return t.lastToken
 }
 
@@ -172,11 +174,9 @@ func (t Tokens) getTokenNumber() {
 }
 
 func (t Tokens) nextLine() []rune {
-	var pos = strings.IndexRune(string(t.sourceCode), '\n')
-
-	nextLine := t.sourceCode[0:pos]     // ein slice
-	t.sourceCode = t.sourceCode[pos+1:] // der Rest
-	return nextLine
+	t.lineNr++
+	//fmt.Println(t.lines[t.lineNr])
+	return []rune(t.lines[t.lineNr])
 }
 
 func (t Tokens) followingRune(r rune) bool {
@@ -194,4 +194,11 @@ func (t Tokens) error(s string) {
 
 func (t Tokens) warning(s string) {
 	fmt.Println(s)
+}
+
+func main() {
+	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
+	tokens.setSourceCode("3+4*5")
+	tokens.getToken()
+	println(tokens.lastString)
 }

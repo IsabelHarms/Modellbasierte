@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 var tokens Tokens
 var vartable *VarTable
 var invalidExp Exp
@@ -12,7 +8,7 @@ func parse() {
 
 	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
 	tokens.setSourceCode("print(3+4*5)")
-
+	tokens.getToken()
 	vartable = &VarTable{nesting: -1} // ready for first start of block
 	//invalidExp = (Var)
 	// work with a pointer, otherwise you will get multiple structs!
@@ -56,7 +52,7 @@ func (r ExpNode) GetType() IMPtype {
 // Typabgleich
 func SetType(r *ExpNode) {
 
-	r.Type = Undefined // unless wie find a legal combination
+	r.Type = Undefined // unless we find a legal combination
 	if r.left.GetType() == Undefined || r.op != NOT && r.right.GetType() == Undefined {
 		return // no additional Error
 	}
@@ -89,8 +85,9 @@ func SetType(r *ExpNode) {
 	}
 }
 
-func main() {
-	r := ExpNode{op: PLUS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
+func fsth() {
+	parse()
+	/*r := ExpNode{op: PLUS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
 	SetType(&r)
 	fmt.Println(r.GetType())
 
@@ -100,7 +97,7 @@ func main() {
 
 	r = ExpNode{op: EQUAL, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Boolean, bValue: false}}
 	SetType(&r)
-	fmt.Println(r.GetType())
+	fmt.Println(r.GetType())*/
 }
 
 /*
