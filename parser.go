@@ -12,7 +12,7 @@ var invalidExp Exp
 func parse() {
 
 	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
-	tokens.setSourceCode("print( 3 +4*15)")
+	tokens.setSourceCode("-57")
 	tokens.getToken()
 	vartable = &VarTable{nesting: -1} // ready for first start of block
 	exp := operand()

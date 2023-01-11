@@ -133,7 +133,7 @@ func (t *Tokens) getToken() Token {
 		t.position++
 		t.lastToken = BLOCKSTOP
 	case '-':
-		t.position++
+		//t.position++
 		if unicode.IsDigit(t.currentLine[t.position+1]) {
 			t.getTokenNumber()
 		}
@@ -177,7 +177,7 @@ func (t *Tokens) getToken() Token {
 }
 
 func (t *Tokens) getTokenNumber() {
-	stop := t.position
+	stop := t.position + 1
 	for stop < len(t.currentLine) && unicode.IsDigit(t.currentLine[stop]) {
 		stop++
 	}
