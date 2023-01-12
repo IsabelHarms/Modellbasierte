@@ -6,7 +6,7 @@ import (
 
 type Exp interface {
 	//pretty() string
-	eval() Value
+	eval() *Value
 	GetType() IMPtype
 }
 

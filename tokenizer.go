@@ -47,6 +47,13 @@ const (
 
 func (t *Tokens) setSourceCode(source string) {
 	t.lines = strings.Split(source, "\n")
+	t.lineNr = 0
+	t.again = false
+	if len(t.lines) > 0 { // get first line ready
+		t.currentLine = []rune(t.lines[t.lineNr])
+		t.position = 0
+	}
+	t.printLine()
 }
 
 func (t *Tokens) unGet() {
@@ -59,17 +66,25 @@ func (t *Tokens) Get() Token {
 		t.again = false
 		return t.lastToken
 	}
-
-	for t.position < len(t.currentLine) && (t.currentLine[t.position] == ' ' || t.currentLine[t.position] == '\t') {
-		t.position++
+	if t.lineNr == len(t.lines) { // behind last line, EOF
+		return END
 	}
-
-	if t.position == len(t.currentLine) { //get next line
-		t.currentLine = t.nextLine()
+	for { // find an input line with non-white chars
+		// skip white space:
+		for t.position < len(t.currentLine) && (t.currentLine[t.position] == ' ' || t.currentLine[t.position] == '\t') {
+			t.position++
+		}
+		if t.position < len(t.currentLine) { // found something
+			break
+		}
+		// try get next line:
+		t.lineNr++
+		if t.lineNr == len(t.lines) {
+			return END
+		}
+		t.printLine()
+		t.currentLine = []rune(t.lines[t.lineNr])
 		t.position = 0
-	}
-	if len(t.currentLine) == 0 { //end of code
-		t.lastToken = END
 	}
 
 	switch t.currentLine[t.position] {
@@ -132,12 +147,6 @@ func (t *Tokens) Get() Token {
 	case '}':
 		t.position++
 		t.lastToken = BLOCKSTOP
-	case '-':
-		t.position++
-		if unicode.IsDigit(t.currentLine[t.position+1]) {
-			t.getTokenNumber()
-		}
-		t.lastToken = INVALID
 	default:
 		if isLetter(t.currentLine[t.position]) { //is letter is wrong
 			stop := t.position + 1
@@ -164,38 +173,42 @@ func (t *Tokens) Get() Token {
 			default:
 				t.lastToken = NAME //if none of the cases are true it has to be a NAME
 			}
+			return t.lastToken
 		}
 
-		if unicode.IsDigit(t.currentLine[t.position]) {
-			t.getTokenNumber()
+		if unicode.IsDigit(t.currentLine[t.position]) || t.currentLine[t.position] == '-' {
+			negative := t.currentLine[t.position] == '-'
+			stop := t.position
+			if negative {
+				stop++ //skip -
+				if !unicode.IsDigit(t.currentLine[stop]) {
+					t.error("Expected digit after -")
+					return INVALID
+				}
+			}
+			for stop < len(t.currentLine) && unicode.IsDigit(t.currentLine[stop]) {
+				stop++
+			}
+			number := t.currentLine[t.position:stop]
+			t.lastString = string(number)
+			t.lastToken = INTLITERAL
+			t.position = stop
+			return t.lastToken
 		}
+		t.error("invalid character")
+		t.lastToken = INVALID
 	}
-
-	fmt.Printf("%v\n", t.lastToken)
 	return t.lastToken
-}
-
-func (t *Tokens) getTokenNumber() {
-	stop := t.position
-	for stop < len(t.currentLine) && unicode.IsDigit(t.currentLine[stop]) {
-		stop++
-	}
-	number := t.currentLine[t.position:stop]
-	t.lastString = string(number)
-	t.lastToken = INTLITERAL
-	t.position = stop
-}
-
-func (t *Tokens) nextLine() []rune {
-	t.lineNr++
-	if t.lineNr > len(t.lines) {
-		return []rune(" ")
-	}
-	return []rune(t.lines[t.lineNr-1]) //todo
 }
 
 func (t *Tokens) followingRune(r rune) bool {
 	return t.position+1 < len(t.currentLine) && t.currentLine[t.position+1] == r
+}
+
+func (t *Tokens) printLine() {
+	fmt.Print(t.lineNr + 1)
+	fmt.Print(": ")
+	fmt.Println(t.lines[t.lineNr])
 }
 
 func skipInvalid() {
@@ -204,6 +217,8 @@ func skipInvalid() {
 
 func (t *Tokens) error(s string) {
 	t.errorCount++
+	fmt.Print(strings.Repeat("-", t.position+2))
+	fmt.Println("^")
 	fmt.Println(s)
 }
 

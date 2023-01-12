@@ -35,16 +35,49 @@ func (p Print) exec() {
 }
 
 func (d Decl) exec() {
-
+	name := d.name
+	value := d.expression
+	if value.GetType() == Integer {
+		varTable.declareInt(name, value.eval().iValue)
+	} else {
+		varTable.declareBool(name, value.eval().bValue)
+	}
 }
-func (b Assign) exec() {
-
+func (a Assign) exec() {
+	name := a.name
+	value := a.expression
+	if value.GetType() == Integer {
+		varTable.declareInt(name, value.eval().iValue)
+	} else {
+		varTable.declareBool(name, value.eval().bValue)
+	}
 }
 
-func (e ExpNode) eval() Value {
-	return Value{}
+// operator, variable, value switch
+func (e ExpNode) eval() *Value {
+	//switch plus, mal
+	switch e.op {
+	case PLUS:
+		return &Value{Type: Integer, iValue: e.left.eval().iValue + e.right.eval().iValue}
+	case MULT:
+		return &Value{Type: Integer, iValue: e.left.eval().iValue * e.right.eval().iValue}
+	case EQUAL:
+		if e.left.GetType() == Integer {
+			return &Value{Type: Boolean, bValue: e.left.eval().iValue == e.right.eval().iValue}
+		}
+		return &Value{Type: Boolean, bValue: e.left.eval().bValue == e.right.eval().bValue}
+	case LESS:
+		return &Value{Type: Boolean, bValue: e.left.eval().iValue <= e.right.eval().iValue}
+	case AND:
+		return &Value{Type: Boolean, bValue: e.left.eval().bValue && e.right.eval().bValue}
+	case OR:
+		return &Value{Type: Boolean, bValue: e.left.eval().bValue || e.right.eval().bValue}
+	case NOT:
+		return &Value{Type: Boolean, bValue: !e.left.eval().bValue}
+	}
+	return nil //todo this should never happen
 }
 
-func (v Value) eval() Value {
-	return Value{}
+func (v Value) eval() *Value {
+	return &v
 }
