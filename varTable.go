@@ -64,6 +64,13 @@ func (vt *VarTable) declareBool(name string, b bool) {
 	vt.names[vt.nesting][name] = &Value{Type: Boolean, bValue: b}
 }
 
+func (vt *VarTable) declareUndefined(name string) {
+	if vt.names[vt.nesting] == nil {
+		vt.names[vt.nesting] = map[string]*Value{}
+	} // new map for current block
+	vt.names[vt.nesting][name] = &Value{Type: Undefined}
+}
+
 func (vt *VarTable) Get(name string) *Value {
 	for i := vt.nesting; i >= 0; i-- {
 		if vt.names[vt.nesting] == nil {

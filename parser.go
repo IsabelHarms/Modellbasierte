@@ -1,37 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 )
-
-var tokens Tokens
-var varTable *VarTable
-var invalidExp Exp
-
-func parse() {
-
-	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
-	tokens.setSourceCode("print( 3 +4*15)")
-	tokens.getToken()
-	varTable = &VarTable{nesting: -1} // ready for first start of block
-	exp := operand()
-	fmt.Printf("", exp) //debug to here and look at the expression tree
-	//invalidExp = (Var)
-	// work with a pointer, otherwise you will get multiple structs!
-
-	/*vartable.blockStart() // dereferencing is implied! :-(
-
-	vartable.declareInt("Isabel", 22)
-	vartable.declareInt("David", 25)
-	vartable.blockStart()
-	vartable.declareInt("Isabel", 2000)
-	vartable.Get("Isabel").showType()
-	vartable.blockEnd()
-	vartable.Get("Isabel").printValue()
-	vartable.blockStart()
-	vartable.Get("Isabel").printValue()*/
-}
 
 type Exp interface {
 	//pretty() string
@@ -126,31 +97,16 @@ func SetType(r *ExpNode) {
 	}
 }
 
-func main() {
-	parse()
-	/*r := ExpNode{op: PLUS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
-	SetType(&r)
-	fmt.Println(r.GetType())
-
-	r = ExpNode{op: LESS, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Integer, iValue: 2}}
-	SetType(&r)
-	fmt.Println(r.GetType())
-
-	r = ExpNode{op: EQUAL, left: Value{Type: Integer, iValue: 3}, right: Value{Type: Boolean, bValue: false}}
-	SetType(&r)
-	fmt.Println(r.GetType())*/
-}
-
-func programm() Executable {
+func program() Executable {
 	b := block()
-	if tokens.getToken() != END {
+	if tokens.Get() != END {
 		tokens.error("trailing garbage")
 	}
 	return b
 }
 
 func block() Block {
-	if tokens.getToken() != BLOCKSTART {
+	if tokens.Get() != BLOCKSTART {
 		tokens.error("expected { block }")
 	}
 	varTable.blockStart()
@@ -158,19 +114,19 @@ func block() Block {
 	for { // loop while finding statements
 		s := statement()
 		b = append(b, s)
-		switch tokens.getToken() {
+		switch tokens.Get() {
 		case SEPARATOR:
 			continue
 		case BLOCKSTOP:
 			{
 				varTable.blockEnd()
-				/*if tokens.getToken() != END {
+				/*if tokens.Get() != END {
 					tokens.error("missing '{' or garbage after program block")
 				}*/
 				return b
 			}
 		default:
-			tokens.unGetToken()
+			tokens.unGet()
 			tokens.error("missing ';' or '}' after statement")
 			// todo: skip garbage until next statement ?
 			return b
@@ -179,17 +135,27 @@ func block() Block {
 }
 
 func statement() Executable {
-	switch tokens.getToken() {
+	switch tokens.Get() {
 	case IF:
 		return ifStatement()
 	case WHILE:
 		return whileStatement()
 	case PRINT:
 		return printStatement()
-
-		//case NAME: // declaration or assignment
+	case NAME:
+		name := tokens.lastString
+		switch tokens.Get() {
+		case ASSIGN:
+			return assignment(name)
+		case DECLARE:
+			return declaration(name)
+		default:
+			tokens.unGet()
+			tokens.error("assignment or declaration expected")
+			return nil
+		}
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	tokens.error("statement expected")
 	return nil
 }
@@ -200,8 +166,8 @@ func ifStatement() Executable {
 		tokens.error("if condition must be boolean")
 	}
 	thenPart := block()
-	if tokens.getToken() != ELSE {
-		tokens.unGetToken()
+	if tokens.Get() != ELSE {
+		tokens.unGet()
 		tokens.error("if without 'else' (not allowed in IMP)")
 	}
 	elsePart := block()
@@ -221,6 +187,36 @@ func printStatement() Executable {
 	return Print{expression()}
 }
 
+func assignment(name string) Executable {
+	v := varTable.Get(name)
+	if v == nil {
+		tokens.error("undefined variable")
+		return nil
+	}
+	exp := expression()
+	if v.Type == Undefined || exp.GetType() == Undefined {
+		return nil
+	}
+	if v.Type == exp.GetType() {
+		return Assign{name, exp}
+	}
+	tokens.error("type mismatch")
+	return nil
+}
+
+func declaration(name string) Executable {
+	exp := expression()
+	switch exp.GetType() {
+	case Integer:
+		varTable.declareInt(name, 0) //Pseudo value
+	case Boolean:
+		varTable.declareBool(name, false) //Pseudo value
+	default:
+		varTable.declareUndefined(name)
+	}
+	return Decl{name, exp}
+}
+
 /*
 Grammatik
 Expression := OrOp | OrOp "| |" Expression
@@ -233,72 +229,72 @@ Operand := Variable | Literal | "!" Operand |"(" Expression ")"
 */
 func expression() Exp {
 	lhs := orOp()
-	if tokens.getToken() == OR {
+	if tokens.Get() == OR {
 		node := ExpNode{op: OR, left: lhs, right: expression()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func orOp() Exp {
 	lhs := andOp()
-	if tokens.getToken() == PLUS {
+	if tokens.Get() == PLUS {
 		node := ExpNode{op: AND, left: lhs, right: orOp()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func andOp() Exp {
 	lhs := equalOp()
-	if tokens.getToken() == EQUAL {
+	if tokens.Get() == EQUAL {
 		node := ExpNode{op: EQUAL, left: lhs, right: equalOp()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func equalOp() Exp {
 	lhs := lessOp()
-	if tokens.getToken() == LESS {
+	if tokens.Get() == LESS {
 		node := ExpNode{op: LESS, left: lhs, right: lessOp()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func lessOp() Exp {
 	lhs := plusOp()
-	if tokens.getToken() == PLUS {
+	if tokens.Get() == PLUS {
 		node := ExpNode{op: PLUS, left: lhs, right: lessOp()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func plusOp() Exp {
 	lhs := operand()
-	if tokens.getToken() == MULT {
+	if tokens.Get() == MULT {
 		node := ExpNode{op: MULT, left: lhs, right: plusOp()}
 		SetType(&node)
 		return &node
 	}
-	tokens.unGetToken()
+	tokens.unGet()
 	return lhs
 }
 
 func operand() Exp {
-	switch tokens.getToken() {
+	switch tokens.Get() {
 	case NAME:
 		valPtr := varTable.Get(tokens.lastString)
 		if valPtr == nil {
@@ -317,13 +313,13 @@ func operand() Exp {
 		return &node
 	case OPEN:
 		exp := expression()
-		if tokens.getToken() != CLOSE {
+		if tokens.Get() != CLOSE {
 			tokens.error("lacking ')'")
 			//todo
 		}
 		return exp
 	}
 	tokens.error("missing operand")
-	tokens.unGetToken()
+	tokens.unGet()
 	return &Value{Type: Undefined}
 }

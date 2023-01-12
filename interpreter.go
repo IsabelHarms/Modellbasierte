@@ -34,16 +34,12 @@ func (p Print) exec() {
 	}
 }
 
-/*func (d Decl) exec() {
-	for _, stmt := range b {
-		stmt.exec()
-	}
+func (d Decl) exec() {
+
 }
 func (b Assign) exec() {
-	for _, stmt := range b {
-		stmt.exec()
-	}
-}*/
+
+}
 
 func (e ExpNode) eval() Value {
 	return Value{}

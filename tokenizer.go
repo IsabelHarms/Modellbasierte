@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-type Token int
+type Token byte
 
 type Tokens struct { //infos on the current code
 	position    int
@@ -49,11 +49,11 @@ func (t *Tokens) setSourceCode(source string) {
 	t.lines = strings.Split(source, "\n")
 }
 
-func (t *Tokens) unGetToken() {
+func (t *Tokens) unGet() {
 	t.again = true
 }
 
-func (t *Tokens) getToken() Token {
+func (t *Tokens) Get() Token {
 
 	if t.again {
 		t.again = false
@@ -109,7 +109,7 @@ func (t *Tokens) getToken() Token {
 	case '<':
 		t.position++
 		t.lastToken = LESS
-	case ',':
+	case ';':
 		t.position++
 		t.lastToken = SEPARATOR
 	case '=':
@@ -171,7 +171,6 @@ func (t *Tokens) getToken() Token {
 		}
 	}
 
-	//fmt.Printf(t.lastString)
 	fmt.Printf("%v\n", t.lastToken)
 	return t.lastToken
 }
@@ -214,15 +213,4 @@ func (t *Tokens) warning(s string) {
 
 func isLetter(c rune) bool {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
-}
-
-func tokenTest() {
-	tokens = Tokens{position: 0, currentLine: []rune(""), errorCount: 0, again: false}
-	tokens.setSourceCode("print(true&&false)")
-	tokens.getToken()
-	tokens.getToken()
-	tokens.getToken()
-	tokens.getToken()
-	tokens.getToken()
-	tokens.getToken()
 }
