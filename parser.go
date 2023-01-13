@@ -5,7 +5,7 @@ import (
 )
 
 type Exp interface {
-	//pretty() string
+	pretty() string
 	eval() *Value
 	GetType() IMPtype
 }
@@ -13,6 +13,10 @@ type Exp interface {
 // a value is an Expression, it must have:
 func (v Value) GetType() IMPtype {
 	return v.Type
+}
+
+func (v Variable) GetType() IMPtype {
+	return varTable.Get(v.name).GetType()
 }
 
 type While struct {
@@ -49,7 +53,11 @@ type ExpNode struct {
 
 type Executable interface { // blocks and statements
 	exec()
-	// pretty() string
+	pretty() string
+}
+
+type Variable struct {
+	name string
 }
 
 // Block and Statements
@@ -299,9 +307,9 @@ func operand() Exp {
 		valPtr := varTable.Get(tokens.lastString)
 		if valPtr == nil {
 			tokens.error("undefined variable")
-			return &Value{Type: Undefined}
+			varTable.declareUndefined(tokens.lastString)
 		}
-		return valPtr
+		return &Variable{name: tokens.lastString}
 	case BOOLLITERAL:
 		return &Value{Type: Boolean, bValue: tokens.lastString == "true"}
 	case INTLITERAL:

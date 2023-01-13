@@ -73,10 +73,10 @@ func (vt *VarTable) declareUndefined(name string) {
 
 func (vt *VarTable) Get(name string) *Value {
 	for i := vt.nesting; i >= 0; i-- {
-		if vt.names[vt.nesting] == nil {
+		if vt.names[i] == nil {
 			continue
 		}
-		v := vt.names[vt.nesting][name]
+		v := vt.names[i][name]
 		if v != nil {
 			return v
 		}
