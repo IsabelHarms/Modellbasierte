@@ -6,7 +6,7 @@ var tokens Tokens
 var varTable VarTable
 
 func main() {
-	var testcases [16][2]string
+	var testcases [18][2]string
 	testcases[0][0] = "{x := -1; x := x<0; print(x)}"
 	testcases[0][1] = "true"
 	testcases[1][0] = "{x := 0; while x < 5{print(2*x); x = x+1}}"
@@ -39,6 +39,10 @@ func main() {
 	testcases[14][1] = "error"
 	testcases[15][0] = "{x := 3 ; y := 2 ; if ( 2 == (x || y )){print(10)}else{print(15)}}"
 	testcases[15][1] = "error" //hoffe ich
+	testcases[16][0] = "{x := 5; y := 4; z := x*y; if (z == 20) {print(z)} else {print(y)}}"
+	testcases[16][1] = "20"
+	testcases[17][0] = "{a := 0; b := 15; z := true; while !(a == b) {if(z) {a = a+1} else {b = b + -1}; z = !z}; print(a)}"
+	testcases[17][1] = "8"
 	for i, v := range testcases {
 		tokens = Tokens{} // get tokenizer data
 		fmt.Printf("Test No %v: \n", i)
