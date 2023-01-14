@@ -248,7 +248,7 @@ func expression() Exp {
 
 func orOp() Exp {
 	lhs := andOp()
-	if tokens.Get() == PLUS {
+	if tokens.Get() == AND {
 		node := ExpNode{op: AND, left: lhs, right: orOp()}
 		SetType(&node)
 		return &node
