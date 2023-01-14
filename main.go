@@ -6,7 +6,7 @@ var tokens Tokens
 var varTable VarTable
 
 func main() {
-	var testcases [18][2]string
+	var testcases [21][2]string
 	testcases[0][0] = "{x := -1; x := x<0; print(x)}"
 	testcases[0][1] = "true"
 	testcases[1][0] = "{x := 0; while x < 5{print(2*x); x = x+1}}"
@@ -43,6 +43,12 @@ func main() {
 	testcases[16][1] = "20"
 	testcases[17][0] = "{a := 0; b := 15; z := true; while !(a == b) {if(z) {a = a+1} else {b = b + -1}; z = !z}; print(a)}"
 	testcases[17][1] = "8"
+	testcases[18][0] = "{a := 0; b := 6;  c := 5;while a < b {a = a+1; c = 5; while c < 20 {c= c+5; if (50< c*a) {print(c*a)} else {c=c}}}}"
+	testcases[18][1] = "60 60 80 75 100 60 90 120"
+	testcases[19][0] = "{a := false; b := false;  c := false; while (((a == false)|| (b==false)) || c==false) {if(c){c = false; if(b){b = false; if(a){a = false} else {a = true; print(a)}} else  {b = true}} else {c = true}}}"
+	testcases[19][1] = "true"
+	testcases[20][0] = "{a := 1; b := 1; c := 0; while a < 5 {b=1; while b < 5 {if(a == b) {c = c + (-1* (a*b))} else {c = c + (a*b)}; b = b+1}; a = a+1}; print(c)}"
+	testcases[20][1] = "40"
 	for i, v := range testcases {
 		tokens = Tokens{} // get tokenizer data
 		fmt.Printf("Test No %v: \n", i)
