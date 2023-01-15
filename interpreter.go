@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // executes
 func (b Block) exec() {
@@ -74,7 +78,7 @@ func (e ExpNode) eval() *Value {
 	case NAME:
 		//return
 	}
-	return nil //todo this should never happen
+	return nil
 }
 
 func (v Variable) eval() *Value {
@@ -89,17 +93,18 @@ func (v Value) eval() *Value {
 func (b Block) pretty() string {
 	string := "{"
 	for _, stmt := range b {
-		string += stmt.pretty() + ";"
+		string += stmt.pretty() + "; "
 	}
+	string = strings.TrimRight(string, "; ")
 	return string + "}"
 }
 
 func (w While) pretty() string {
-	return "while" + w.cond.pretty() + "{" + w.block.pretty() + "}"
+	return "while " + w.cond.pretty() + " " + w.block.pretty()
 }
 
 func (i IfThenElse) pretty() string {
-	return "if" + i.cond.pretty() + "{" + i.thenBlock.pretty() + "} else {" + i.elseBlock.pretty() + "}"
+	return "if " + i.cond.pretty() + i.thenBlock.pretty() + " else " + i.elseBlock.pretty()
 }
 
 func (p Print) pretty() string {
@@ -107,29 +112,29 @@ func (p Print) pretty() string {
 }
 
 func (d Decl) pretty() string {
-	return d.name + ":=" + d.expression.pretty()
+	return d.name + " := " + d.expression.pretty()
 }
 
 func (a Assign) pretty() string {
-	return a.name + "=" + a.expression.pretty()
+	return a.name + " = " + a.expression.pretty()
 }
 
 func (e ExpNode) pretty() string {
 	switch e.op {
 	case PLUS:
-		return e.left.pretty() + "+" + e.right.pretty()
+		return "(" + e.left.pretty() + " + " + e.right.pretty() + ")"
 	case MULT:
-		return e.left.pretty() + "*" + e.right.pretty()
+		return e.left.pretty() + " * " + e.right.pretty()
 	case AND:
-		return e.left.pretty() + "&&" + e.right.pretty()
+		return e.left.pretty() + " && " + e.right.pretty()
 	case OR:
-		return e.left.pretty() + "||" + e.right.pretty()
+		return e.left.pretty() + " || " + e.right.pretty()
 	case NOT:
 		return "!" + e.left.pretty()
 	case EQUAL:
-		return e.left.pretty() + "==" + e.right.pretty()
+		return e.left.pretty() + " == " + e.right.pretty()
 	case LESS:
-		return e.left.pretty() + "<" + e.right.pretty()
+		return e.left.pretty() + " < " + e.right.pretty()
 	}
 	return ""
 }
@@ -140,7 +145,7 @@ func (v Variable) pretty() string {
 
 func (v Value) pretty() string {
 	if v.Type == Integer {
-		return string(rune(v.iValue))
+		return strconv.Itoa(v.iValue)
 	}
 	if v.bValue == true {
 		return "true"
