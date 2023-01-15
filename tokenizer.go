@@ -95,7 +95,6 @@ func (t *Tokens) Get() Token {
 		} else {
 			t.position++
 			t.error("invalid operand")
-			skipInvalid()
 			t.lastToken = INVALID
 		}
 	case '+':
@@ -209,10 +208,6 @@ func (t *Tokens) printLine() {
 	fmt.Print(t.lineNr + 1)
 	fmt.Print(": ")
 	fmt.Println(t.lines[t.lineNr])
-}
-
-func skipInvalid() {
-
 }
 
 func (t *Tokens) error(s string) {

@@ -6,7 +6,7 @@ var tokens Tokens
 var varTable VarTable
 
 func main() {
-	var testcases [21][2]string
+	var testcases [22][2]string
 	testcases[0][0] = "{x := -1; x := x<0; print(x)}"
 	testcases[0][1] = "true"
 	testcases[1][0] = "{x := 0; while x < 5{print(2*x); x = x+1}}"
@@ -49,6 +49,8 @@ func main() {
 	testcases[19][1] = "true"
 	testcases[20][0] = "{a := 1; b := 1; c := 0; while a < 5 {b=1; while b < 5 {if(a == b) {c = c + (-1* (a*b))} else {c = c + (a*b)}; b = b+1}; a = a+1}; print(c)}"
 	testcases[20][1] = "40"
+	testcases[21][0] = "{x := true; \n y:= 1; \n if x {\n print(test)\n} else {\n x = x+y; print(x)\n}}xdfkghjnedfhjib"
+	testcases[21][1] = "3 errors"
 	for i, v := range testcases {
 		tokens = Tokens{} // get tokenizer data
 		fmt.Printf("Test No %v: \n", i)
@@ -59,10 +61,11 @@ func main() {
 		fmt.Printf("Produced Result: ")
 		if tokens.errorCount == 0 {
 			p.exec()
-			//fmt.Println("IMP program executed")
+			fmt.Printf("Pretty Print: %v \n", p.pretty()) //only execute and pretty print if the tree is error-free
 		} else {
 			fmt.Print(tokens.errorCount)
 			fmt.Println(" errors")
 		}
+		fmt.Println("....................................................")
 	}
 }

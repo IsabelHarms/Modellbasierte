@@ -136,7 +136,6 @@ func block() Block {
 		default:
 			tokens.unGet()
 			tokens.error("missing ';' or '}' after statement")
-			// todo: skip garbage until next statement ?
 			return b
 		}
 	}
@@ -323,7 +322,6 @@ func operand() Exp {
 		exp := expression()
 		if tokens.Get() != CLOSE {
 			tokens.error("lacking ')'")
-			//todo
 		}
 		return exp
 	}
